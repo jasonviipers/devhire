@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { auth } from '.';
 
-export async function useAuthServer() {
+export async function authServer() {
     try {
         // Get cookie store
         const cookieStore = await cookies();

@@ -18,9 +18,17 @@ export const auth = betterAuth({
             clientSecret: env.AUTH_GITHUB_SECRET,
         },
         google: {
-            clientId: env.AUTH_GOOGLE_CLIENT_ID,
-            clientSecret: env.AUTH_GOOGLE_CLIENT_SECRET,
+            clientId: env.AUTH_GOOGLE_ID,
+            clientSecret: env.AUTH_GOOGLE_SECRET,
         },
+    },
+    user: {
+        additionalFields: {
+            userType: {
+               type: "string[]",
+               fieldName: "user_type",
+            },
+        }
     },
     session: {
         expiresIn: 60 * 60 * 12, // Reduced to 12 hours
@@ -34,6 +42,5 @@ export const auth = betterAuth({
     rateLimit: {
         windowMs: 15 * 60 * 1000, // 15 minutes
         max: 50, // Reduced to 50 requests per windowMs
-        
     },
 })
