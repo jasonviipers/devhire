@@ -10,82 +10,83 @@ datasource db {
 // =====================
 // User & Authentication
 // =====================
+
 model User {
-  id                  String          @id @default(cuid())
-  name                String?
-  email               String          @unique
-  emailVerified       DateTime?
-  image               String?
-  accounts            Account[]
-  sessions            Session[]
+  id            String    @id @default(cuid())
+  name          String?
+  email         String
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
 
-  onboardingCompleted Boolean         @default(false)
+  onboardingCompleted Boolean    @default(false)
   userType            UserType?
-  stripeCustomerId    String?         @unique
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  stripeCustomerId    String?    @unique
   // One-to-one relations
-  Company   Company?
-  JobSeeker JobSeeker?
+  Company             Company?
+  JobSeeker           JobSeeker?
 
   // Other relations
   SavedJobPost  SavedJobPost[]
   UserAIHistory UserAIHistory[]
   Application   Application[]
   Notification  Notification[]
-}
 
-model Account {
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([provider, providerAccountId])
+  @@unique([email])
+  @@map("user")
 }
 
 model Session {
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@unique([token])
+  @@map("session")
 }
 
-model VerificationToken {
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
   identifier String
-  token      String
-  expires    DateTime
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
 
-  @@id([identifier, token])
-}
-
-
-enum UserType {
-  COMPANY
-  JOB_SEEKER
+  @@map("verification")
 }
 
 // =====================
 // Domain Models
 // =====================
-
 model Company {
   id String @id @default(uuid())
 
@@ -178,6 +179,12 @@ enum JobPostStatus {
   DRAFT
   ACTIVE
   EXPIRED
+}
+
+enum UserType {
+  COMPANY
+  JOB_SEEKER
+  ADMIN
 }
 
 model SavedJobPost {
