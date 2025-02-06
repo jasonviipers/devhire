@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,4 +5,288 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// =====================
+// User & Authentication
+// =====================
+model User {
+  id                  String          @id @default(cuid())
+  name                String?
+  email               String          @unique
+  emailVerified       DateTime?
+  image               String?
+  accounts            Account[]
+  sessions            Session[]
+  // Optional for WebAuthn support
+  Authenticator       Authenticator[]
+  onboardingCompleted Boolean         @default(false)
+  userType            UserType?
+  stripeCustomerId    String?         @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // One-to-one relations
+  Company   Company?
+  JobSeeker JobSeeker?
+
+  // Other relations
+  SavedJobPost  SavedJobPost[]
+  UserAIHistory UserAIHistory[]
+  Application   Application[]
+  Notification  Notification[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// Optional for WebAuthn support
+model Authenticator {
+  credentialID         String  @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, credentialID])
+}
+
+enum UserType {
+  COMPANY
+  JOB_SEEKER
+}
+
+// =====================
+// Domain Models
+// =====================
+
+model Company {
+  id String @id @default(uuid())
+
+  name             String
+  location         String
+  logo             String
+  website          String
+  size             String
+  industry         String
+  verified         Boolean           @default(false)
+  about            String
+  user             User              @relation(fields: [userId], references: [id])
+  userId           String            @unique
+  socialMediaLinks SocialMediaLink[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  JobPost JobPost[]
+}
+
+model SocialMediaLink {
+  id          String     @id @default(uuid())
+  url         String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  Company     Company?   @relation(fields: [companyId], references: [id])
+  companyId   String?
+  JobSeeker   JobSeeker? @relation(fields: [jobSeekerId], references: [id])
+  jobSeekerId String?
+}
+
+model JobSeeker {
+  id               String            @id @default(uuid())
+  name             String
+  about            String
+  resume           String
+  user             User              @relation(fields: [userId], references: [id])
+  userId           String            @unique
+  skills           String[]
+  experience       String?
+  socialMediaLinks SocialMediaLink[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Optional relation for AI-generated resume embeddings
+  ResumeEmbedding ResumeEmbedding?
+}
+
+model JobPost {
+  id String @id @default(uuid())
+
+  jobTitle        String
+  employmentType  String
+  location        String
+  salaryFrom      Float
+  salaryTo        Float
+  jobDescription  String
+  listingDuration Int
+  level           JobLevel
+  skills          String[]
+  benefits        String[]
+
+  status       JobPostStatus @default(DRAFT)
+  applications Int           @default(0)
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  SavedJobPost SavedJobPost[]
+  Application  Application[]
+  Notification Notification[]
+
+  // Optional relation for AI-generated job embeddings
+  JobEmbedding JobEmbedding?
+}
+
+enum JobLevel {
+  ENTRY_LEVEL
+  MID_LEVEL
+  SENIOR_LEVEL
+  INTERN
+  MANAGER
+}
+
+enum JobPostStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+}
+
+model SavedJobPost {
+  id     String @id @default(uuid())
+  jobId  String
+  userId String
+
+  job  JobPost @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, jobId])
+}
+
+model UserAIHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  prompt    String
+  response  String
+  timestamp DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Application {
+  id        String            @id @default(uuid())
+  jobId     String
+  userId    String
+  status    ApplicationStatus @default(APPLIED)
+  appliedAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  atsScore  Float?
+  resume    String // Store resume text for analysis
+
+  job          JobPost        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Notification Notification[]
+
+  @@unique([userId, jobId])
+}
+
+enum ApplicationStatus {
+  APPLIED
+  IN_REVIEW
+  INTERVIEWED
+  REJECTED
+  OFFERED
+  ACCEPTED
+}
+
+model Notification {
+  id            String   @id @default(uuid())
+  userId        String // User who should receive the notification
+  message       String
+  read          Boolean  @default(false)
+  type          String // e.g., "APPLICATION", "STATUS_UPDATE"
+  applicationId String?
+  jobId         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id])
+  application Application? @relation(fields: [applicationId], references: [id])
+  job         JobPost?     @relation(fields: [jobId], references: [id])
+
+  @@index([userId])
+}
+
+// =====================
+// AI Embedding Models
+// =====================
+
+model JobEmbedding {
+  id        String   @id @default(uuid())
+  jobPostId String   @unique
+  // Store the embedding vector as JSON (an array of numbers, for example)
+  embedding Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobPost JobPost @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+}
+
+model ResumeEmbedding {
+  id          String   @id @default(uuid())
+  jobSeekerId String   @unique
+  // Store the resume embedding as JSON (an array of numbers, for example)
+  embedding   Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  jobSeeker JobSeeker @relation(fields: [jobSeekerId], references: [id], onDelete: Cascade)
 }
