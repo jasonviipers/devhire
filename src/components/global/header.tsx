@@ -1,3 +1,5 @@
+"use client";
+
 import { UserType } from "@prisma/client";
 import { BrandLogo } from "./brand-logo";
 import { Button, buttonVariants } from "../ui/button";
@@ -6,8 +8,9 @@ import { useMemo } from "react";
 import { ThemeToggle } from "./theme-toggle";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../ui/sheet";
 import { Menu } from "lucide-react";
-import { authServer } from "@/server/auth/auth-server";
-
+import { useAuthStore } from "@/lib/store/useAuthStore";
+import { AuthModal } from "../auth/auth-modal";
+import { UserDropdown } from "./user-dropdown";
 
 interface NavigationItem {
   name: string;
@@ -34,6 +37,7 @@ const APP_NAME = {
 } as const;
 
 const APP_DESCRIPTION = 'Find your dream job today';
+
 const getFilteredNavigation = (navigation: NavigationItem[], userType: UserType | null): NavigationItem[] => {
   return navigation.filter(item => {
     if (!item.roles) return true;
@@ -41,14 +45,20 @@ const getFilteredNavigation = (navigation: NavigationItem[], userType: UserType 
   });
 };
 
-const LoginButton = () => (
-  <Link href="/login"
-    className={buttonVariants({
-      variant: "outline", size: "default", className: "px-4"
-    })}>
-    Login
-  </Link>
-);
+const LoginButton = () => {
+  const { openAuthModal } = useAuthStore();
+  
+  return (
+    <Button
+      variant="outline"
+      size="default"
+      className="px-4"
+      onClick={openAuthModal}
+    >
+      Login
+    </Button>
+  );
+};
 
 const NavigationLink = ({ item, className }: { item: NavigationItem; className?: string }) => (
   <Link
@@ -76,22 +86,18 @@ const DesktopNavigation = ({ navigation, user }: NavigationProps) => {
         <NavigationLink key={item.name} item={item} />
       ))}
       {user ? (
-        // <UserDropdown
-        //   email={user.email ?? ''}
-        //   name={user.name ?? 'Anonymous'}
-        //   image={user.image ?? ''}
-        //   userType={user.userType}
-        // />
-        <>
-
-        </>
+        <UserDropdown
+          email={user.email ?? ''}
+          name={user.name ?? 'Anonymous'}
+          image={user.image ?? ''}
+          userType={user.userType}
+        />
       ) : (
         <LoginButton />
       )}
     </div>
   );
 };
-
 
 const MobileNavigation = ({ navigation, user }: NavigationProps) => {
   const filteredNav = useMemo(() =>
@@ -103,21 +109,19 @@ const MobileNavigation = ({ navigation, user }: NavigationProps) => {
     <div className="md:hidden flex items-center gap-3">
       <ThemeToggle />
       {user ? (
-        // <UserDropdown
-        //   email={user.email ?? ''}
-        //   name={user.name ?? 'Anonymous'}
-        //   image={user.image ?? ''}
-        //   userType={user.userType}
-        // />
-        <>
-
-        </>
+        <UserDropdown
+          email={user.email ?? ''}
+          name={user.name ?? 'Anonymous'}
+          image={user.image ?? ''}
+          userType={user.userType}
+        />
+       
       ) : (
         <LoginButton />
       )}
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" size="icon" aria-label="Open navigation menu"          >
+          <Button variant="outline" size="icon" aria-label="Open navigation menu">
             <Menu className="h-5 w-5" />
             <span className="sr-only">Open menu</span>
           </Button>
@@ -146,17 +150,24 @@ const MobileNavigation = ({ navigation, user }: NavigationProps) => {
     </div>
   );
 };
-export async function Header() {
-  const { session, error, user } = await authServer();
-  console.log({ session, error, user });
+
+export function Header({ user }: { user: User | null }) {
+  const { isAuthModalOpen, closeAuthModal,  } = useAuthStore();
   const navItems: NavigationItem[] = [];
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-        <BrandLogo />
-        <DesktopNavigation navigation={navItems} user={null} />
-        <MobileNavigation navigation={navItems} user={null} />
-      </div>
-    </header>
+    <>
+      <header className="sticky top-0 z-50 w-full border-b bg-background backdrop-blur supports-[backdrop-filter]:bg-background/30">
+        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
+          <BrandLogo />
+          <DesktopNavigation navigation={navItems} user={user} />
+          <MobileNavigation navigation={navItems} user={user} />
+        </div>
+      </header>
+      <AuthModal 
+        isOpen={isAuthModalOpen}
+        onClose={closeAuthModal}
+      />
+    </>
   );
 }

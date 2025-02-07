@@ -25,8 +25,7 @@ export const auth = betterAuth({
     user: {
         additionalFields: {
             userType: {
-               type: "string[]",
-               fieldName: "user_type",
+               type: ["COMPANY", "JOB_SEEKER", "ADMIN"],
             },
         }
     },
@@ -36,7 +35,7 @@ export const auth = betterAuth({
         freshAge: 60 * 60 * 24, // Refresh session every 24 hours
         cookieCache:{
             enabled: true,
-            maxAge: 60 * 60 * 24 * 30, 
+            maxAge: 5 * 60, // 5 minutes
         }
     },
     rateLimit: {

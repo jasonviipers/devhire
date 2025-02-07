@@ -12,7 +12,6 @@ export function Footer() {
                         © {new Date().getFullYear()} All rights reserved
                     </span>
                 </div>
-
                 <div className="flex items-center gap-6 text-sm text-muted-foreground">
                     <Link href="/privacy" className="hover:text-foreground transition-colors">
                         Privacy Policy

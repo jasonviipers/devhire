@@ -9,27 +9,27 @@ export function SearchSection() {
 
   const handleSearch = (query: string, location: string) => {
     const params = new URLSearchParams(searchParams);
-    
+
     if (query) {
       params.set("query", query);
     } else {
       params.delete("query");
     }
-    
+
     if (location) {
       params.set("location", location);
     } else {
       params.delete("location");
     }
-    
+
     // Reset to first page when search changes
     params.delete("page");
-    
+
     router.push(`/?${params.toString()}`);
   };
 
   return (
-    <div className="mb-8">
+    <div className="mb-6">
       <SearchBar onSearch={handleSearch} />
     </div>
   );
