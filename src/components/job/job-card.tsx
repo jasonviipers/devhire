@@ -65,7 +65,7 @@ export function JobCard({ job }: JobCardProps) {
                             <div className="flex flex-wrap items-center gap-2">
                                 <Badge variant="secondary">{job.employmentType}</Badge>
                                 <Badge variant="secondary">{job.level}</Badge>
-                                <Badge>{formatCurrency(job.salaryFrom)} - {formatCurrency(job.salaryTo)}</Badge>
+                                <span className="text-sm text-muted-foreground">{formatCurrency(job.salaryFrom)} - {formatCurrency(job.salaryTo)}</span>
                             </div>
                             
                             <div className="flex flex-wrap gap-2">

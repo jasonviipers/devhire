@@ -1,89 +1,51 @@
-import { prisma } from "@/server/db";
-import { JobPostStatus } from "@prisma/client";
-import { JobCard } from "./job-card";
-import { EmptyState } from "../global/EmptyState";
-import { PaginationComponent } from "../global/PaginationComponent";
+'use client'
+import { JobCard } from "./job-card"
+import { EmptyState } from "../global/EmptyState"
+import { PaginationComponent } from "../global/PaginationComponent"
+import { useJobStore } from "@/lib/store/useJobStore"
+import { useEffect } from "react"
 
-async function getJobs(
-  page: number = 1,
-  pageSize: number = 10,
-  jobTypes: string[] = [],
-  location: string = ""
-) {
-  const skip = (page - 1) * pageSize;
-
-  const where = {
-    status: JobPostStatus.ACTIVE,
-    ...(jobTypes.length > 0 && {
-      employmentType: {
-        in: jobTypes,
-      },
-    }),
-    ...(location &&
-      location !== "worldwide" && {
-      location: location,
-    }),
-  };
-
-  const [data, totalCount] = await Promise.all([
-    prisma.jobPost.findMany({
-      skip,
-      take: pageSize,
-      where,
-      select: {
-        jobTitle: true,
-        id: true,
-        salaryFrom: true,
-        salaryTo: true,
-        employmentType: true,
-        location: true,
-        createdAt: true,
-        company: {
-          select: {
-            name: true,
-            logo: true,
-            location: true,
-            about: true,
-            socialMediaLinks: true,
-            industry: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    }),
-    prisma.jobPost.count({ where }),
-  ]);
-
-  return {
-    jobs: data,
-    totalPages: Math.ceil(totalCount / pageSize),
-    currentPage: page,
-  };
+interface JobListingsProps {
+  currentPage: number
+  jobTypes: string[]
+  location: string
 }
 
-export default async function JobListings({
-  currentPage,
-  jobTypes,
-  location,
-}: {
-  currentPage: number;
-  jobTypes: string[];
-  location: string;
-}) {
-  const {
-    jobs,
-    totalPages,
-    currentPage: page,
-  } = await getJobs(currentPage, 7, jobTypes, location);
+export function JobListings({ currentPage, jobTypes, location }: JobListingsProps) {
+  const { jobs, totalPages, isLoading, error, setFilters, fetchJobs } = useJobStore()
+
+  useEffect(() => {
+    setFilters({ page: currentPage, jobTypes, location })
+    fetchJobs()
+  }, [currentPage, jobTypes, location, setFilters, fetchJobs])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-pulse text-gray-500">Loading jobs...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <EmptyState
+          title="Error loading jobs"
+          description={error}
+          buttonText="Try again"
+          href="#"
+        />
+      </div>
+    )
+  }
 
   return (
     <>
       {jobs.length > 0 ? (
-        <div className="flex flex-col gap-6">
-          {jobs.map((job, index) => (
-            <JobCard job={job} key={index} />
+         <div className="flex flex-col gap-6">
+          {jobs.map((job) => (
+            <JobCard key={job.id} job={job} />
           ))}
         </div>
       ) : (
@@ -94,10 +56,15 @@ export default async function JobListings({
           href="/"
         />
       )}
-
-      <div className="flex justify-center mt-6">
-        <PaginationComponent totalPages={totalPages} currentPage={page} />
-      </div>
+      
+      {jobs.length > 0 && (
+        <div className="flex justify-center mt-6">
+          <PaginationComponent 
+            totalPages={totalPages} 
+            currentPage={currentPage} 
+          />
+        </div>
+      )}
     </>
-  );
+  )
 }

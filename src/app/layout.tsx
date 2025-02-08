@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { createMetadata } from "@/lib/metadata";
 import { Providers } from "@/provider/providers";
 
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -22,7 +23,7 @@ export const metadata = createMetadata({
   applicationName: 'DevHire',
 })
 
-export default function RootLayout({
+export default  function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -33,7 +34,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
       >
         <Providers>
-          {children}
+            {children}
         </Providers>
       </body>
     </html>

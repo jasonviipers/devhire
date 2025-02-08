@@ -1,18 +1,16 @@
+import { toast } from '@/hooks/use-toast';
 import { signIn } from '@/server/auth/auth-client';
 import { User } from '@prisma/client';
-import { toast } from 'sonner';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface AuthState {
     user: Pick<User, 'id' | 'name' | 'email' | 'image'> | null;
     isAuthenticated: boolean;
-    isAuthModalOpen: boolean;  // Add this
-    openAuthModal: () => void; // Add this
-    closeAuthModal: () => void; // Add this
+    isAuthModalOpen: boolean;  
+    openAuthModal: () => void; 
+    closeAuthModal: () => void; 
     logout: () => void;
-    savedJobs: string[];
-    toggleSavedJob: (jobId: string) => void;
     socialLogin: (provider: "github" | "google") => Promise<void>;
 }
 
@@ -21,38 +19,48 @@ export const useAuthStore = create<AuthState>()(
         (set) => ({
             user: null,
             isAuthenticated: false,
-            isAuthModalOpen: false, // Add this
-            openAuthModal: () => set({ isAuthModalOpen: true }), // Add this
-            closeAuthModal: () => set({ isAuthModalOpen: false }), // Add this
+            isAuthModalOpen: false, 
+            openAuthModal: () => set({ isAuthModalOpen: true }), 
+            closeAuthModal: () => set({ isAuthModalOpen: false }), 
             logout: () => set({ user: null, isAuthenticated: false }),
-            savedJobs: [],
-            toggleSavedJob: (jobId: string) => set((state) => ({
-                savedJobs: state.savedJobs.includes(jobId)
-                    ? state.savedJobs.filter((id) => id !== jobId)
-                    : [...state.savedJobs, jobId]
-            })),
+            
             socialLogin: async (provider: "github" | "google") => {
                 try {
                     await signIn.social({
                         provider,
                         callbackURL: "/onboarding",
                         fetchOptions: {
-                            onError: (error: any) => {
+                            onError: (error) => {
                                 console.error("Error signing in:", error);
-                                toast.error("Failed to sign in");
+                                toast({
+                                    title: "Error signing in",
+                                    description: "Please try again",
+                                    variant: "destructive",
+                                })
+
                             },
                             onSuccess: async () => {
-                                toast.success("Signed in successfully");
-                                set({ isAuthModalOpen: false }); // Close modal after successful login
+                                toast({
+                                    title: "Signed in successfully",
+                                    description: "You have been signed in successfully",
+                                    variant: "default",
+                                })
+                                set({ isAuthModalOpen: false });
                             },
+
                         },
                     });
                 } catch (error) {
                     console.error("Error in socialLogin:", error);
-                    toast.error("Sign in failed");
+                    toast({
+                        title: "Sign in failed",
+                        description: "Please try again",
+                        variant: "destructive",
+                    })
                 }
             },
         }),
+
         { name: 'auth-store' }
     )
 );

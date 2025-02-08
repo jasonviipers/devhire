@@ -23,17 +23,61 @@ export async function createCompany(data: z.infer<typeof companySchema>) {
         };
 
         await prisma.$transaction(async (tx) => {
+            // 1. Create the Company first with explicit userId
+            await tx.company.create({
+                data: {
+                    ...sanitizedData,
+                    userId: user.id, // Directly set the relationship
+                }
+            });
+
+            // 2. Update the User
             await tx.user.update({
                 where: { id: user.id },
                 data: {
                     onboardingCompleted: true,
-                    userType: "COMPANY",
-                    Company: { create: sanitizedData },
-                },
+                    userType: "COMPANY"
+                }
             });
         });
-        return redirect("/")
+
+        return redirect("/");
     } catch (error) {
         console.log(error);
+        throw error; // Ensure errors propagate for proper handling
     }
 }
+
+export async function getCompany(userId: string) {
+    const company = await prisma.company.findUnique({
+        where: { userId },
+        select: {
+            name: true,
+            location: true,
+            about: true,
+            logo: true,
+            website: true,
+            size: true,
+            socialMediaLinks: true,
+            industry: true,
+        }
+    });
+    if (!company) redirect("/");
+    return company;
+}
+
+export async function getJobsByCompanyId(companyId: string) {
+    const jobs = await prisma.jobPost.findMany({
+        where: { companyId },
+        include: {
+            company: {
+                select: {
+                    name: true,
+                    logo: true,
+                }
+            }
+        }
+    });
+    return jobs;
+}
+

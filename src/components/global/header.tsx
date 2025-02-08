@@ -47,7 +47,7 @@ const getFilteredNavigation = (navigation: NavigationItem[], userType: UserType 
 
 const LoginButton = () => {
   const { openAuthModal } = useAuthStore();
-  
+
   return (
     <Button
       variant="outline"
@@ -61,11 +61,9 @@ const LoginButton = () => {
 };
 
 const NavigationLink = ({ item, className }: { item: NavigationItem; className?: string }) => (
-  <Link
-    href={item.href}
+  <Link href={item.href}
     className={buttonVariants({
-      variant: "ghost",
-      size: "default",
+      variant: "default",
       className: className || "px-4"
     })}
   >
@@ -115,7 +113,7 @@ const MobileNavigation = ({ navigation, user }: NavigationProps) => {
           image={user.image ?? ''}
           userType={user.userType}
         />
-       
+
       ) : (
         <LoginButton />
       )}
@@ -152,8 +150,25 @@ const MobileNavigation = ({ navigation, user }: NavigationProps) => {
 };
 
 export function Header({ user }: { user: User | null }) {
-  const { isAuthModalOpen, closeAuthModal,  } = useAuthStore();
-  const navItems: NavigationItem[] = [];
+  const { isAuthModalOpen, closeAuthModal, } = useAuthStore();
+  const navItems: NavigationItem[] = [
+    {
+      name: "Find Jobs",
+      href: "/jobs",
+      roles: ["JOB_SEEKER"]
+    },
+    {
+      name: "Create Job",
+      href: "/company/jobs/create",
+      roles: ["COMPANY"]
+    },
+    {
+      name: "My Jobs",
+      href: "/company/jobs",
+      roles: ["COMPANY"]
+    },
+  ];
+
 
   return (
     <>
@@ -164,7 +179,7 @@ export function Header({ user }: { user: User | null }) {
           <MobileNavigation navigation={navItems} user={user} />
         </div>
       </header>
-      <AuthModal 
+      <AuthModal
         isOpen={isAuthModalOpen}
         onClose={closeAuthModal}
       />

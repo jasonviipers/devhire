@@ -10,6 +10,8 @@ export async function requireUser(requiredType?: 'COMPANY' | 'JOB_SEEKER' | 'ADM
     redirect("/login");
   }
 
+
+
   // Check if user type matches the required type (if provided)
   if (user?.userType) {
     if (requiredType && user.userType !== requiredType) {

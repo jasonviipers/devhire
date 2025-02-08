@@ -1,18 +1,14 @@
 import { Header } from '@/components/global/header';
 import { Footer } from '@/components/global/footer';
-import { requireUser } from '@/hooks/useRequireUser';
 import Hero from '@/components/global/hero';
+import { requireUser } from '@/hooks/useRequireUser';
 
-export default async function JobBoardLayout({ children }: { children: React.ReactNode }) {
+export default async function MainLayout({ children }: { children: React.ReactNode }) {
     const user = await requireUser()
     return (
-        <div className="min-h-screen flex flex-col bg-background">
-            <main className="flex-1">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pb-12">
             <Header user={user} />
-                <Hero />
                 {children}
-            <Footer />
-            </main>
         </div>
     )
 }

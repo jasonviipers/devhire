@@ -29,7 +29,7 @@ export function SearchSection() {
   };
 
   return (
-    <div className="mb-6">
+    <div className="mb-5">
       <SearchBar onSearch={handleSearch} />
     </div>
   );

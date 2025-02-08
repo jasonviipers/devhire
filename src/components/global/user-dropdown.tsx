@@ -12,10 +12,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/server/auth/auth-client";
 import { UserType } from "@prisma/client";
-import { LogOut, LucideIcon } from "lucide-react";
+import {  BriefcaseBusiness, Heart, LogOut, LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import { toast } from "sonner";
 
 interface UserDropdownProps {
     email: string;
@@ -31,7 +31,26 @@ interface NavigationItem {
     allowedUserTypes?: UserType[];
 }
 
-const NAVIGATION_ITEMS: NavigationItem[] = [];
+const NAVIGATION_ITEMS: NavigationItem[] = [
+    {
+        href: "/jobs",
+        label: "Jobs",
+        icon: LogOut,
+        allowedUserTypes: ["JOB_SEEKER"],
+    },
+    {
+        href: "/favorites",
+        label: "Saved Jobs",
+        icon: Heart,
+        allowedUserTypes: ['JOB_SEEKER'],
+    },
+    {
+        href: "/company/jobs",
+        label: "Jobs",
+        icon: BriefcaseBusiness,
+        allowedUserTypes: ["COMPANY"],
+    },
+];
 
 export function UserDropdown({ email, name, image, userType }: UserDropdownProps) {
     // Memoize initials calculation
@@ -50,7 +69,7 @@ export function UserDropdown({ email, name, image, userType }: UserDropdownProps
             return userType && item.allowedUserTypes.includes(userType as UserType);
         });
     }, [userType]);
-
+    const router = useRouter();
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -109,10 +128,11 @@ export function UserDropdown({ email, name, image, userType }: UserDropdownProps
                             await signOut({
                                 fetchOptions: {
                                     onSuccess: () => {
-                                        toast.success("Logged out successfully");
-                                    }
+                                        router.refresh();
+                                    },
                                 }
                             });
+
                         }}
                     >
                         <button type="submit" className="w-full flex items-center gap-2">

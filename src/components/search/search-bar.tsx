@@ -15,6 +15,7 @@ interface SearchBarProps {
   };
   className?: string;
 }
+
 export function SearchBar({
   onSearch,
   isLoading = false,
